@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Microsoft.Extensions.Caching.Memory;
+using AutoMapper;
 using EcommerceAPI.DTOs;
 using EcommerceAPI.Models;
 using EcommerceAPI.Repositories.Interfaces;
@@ -10,20 +11,42 @@ namespace EcommerceAPI.Services.Implementations
     {
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
+        private readonly IMemoryCache _cache;
 
         public ProductService(
             IProductRepository productRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IMemoryCache cache)
         {
             _productRepository = productRepository;
             _mapper = mapper;
+            _cache = cache;
         }
 
-        public async Task<List<ProductDto>> GetAllAsync(CancellationToken cancellationToken)
+        public async Task<List<ProductDto>> GetAllAsync(
+    int customerId,
+    CancellationToken cancellationToken)
         {
-            var products = await _productRepository.GetAllAsync(cancellationToken);
+            var cacheKey = $"products:{customerId}";
 
-            return _mapper.Map<List<ProductDto>>(products);
+            if (_cache.TryGetValue(
+                cacheKey,
+                out List<ProductDto>? cachedProducts))
+            {
+                return cachedProducts!;
+            }
+
+            var products = await _productRepository.GetAllAsync(
+                cancellationToken);
+
+            var productDtos = _mapper.Map<List<ProductDto>>(products);
+
+            _cache.Set(
+                cacheKey,
+                productDtos,
+                TimeSpan.FromHours(2));
+
+            return productDtos;
         }
 
         public async Task<ProductDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -38,10 +61,10 @@ namespace EcommerceAPI.Services.Implementations
             return _mapper.Map<ProductDto>(product);
         }
 
-        public async Task<List<ProductDto>> SearchAsync(
-            ProductQueryDto query, CancellationToken cancaellationToken)
+        public async Task<ProductPagedResponseDto> SearchAsync(
+            ProductQueryDto query, CancellationToken cancellationToken)
         {
-            var products = await _productRepository.SearchAsync(
+            var result = await _productRepository.SearchAsync(
                 query.Search,
                 query.CategoryId,
                 query.BrandId,
@@ -52,9 +75,15 @@ namespace EcommerceAPI.Services.Implementations
                 query.SortOrder,
                 query.Page,
                 query.PageSize,
-                cancaellationToken);
-
-            return _mapper.Map<List<ProductDto>>(products);
+                cancellationToken);
+            return new ProductPagedResponseDto
+            {
+                Products = _mapper.Map<List<ProductDto>>(result.Products),
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalRecords = result.TotalRecords,
+                TotalPages = result.TotalPages
+            };
         }
 
 
@@ -71,6 +100,17 @@ namespace EcommerceAPI.Services.Implementations
         public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             return await _productRepository.DeleteAsync(id,cancellationToken);
+        }
+
+        public async Task<bool> UpdateImagePathAsync(
+    int id,
+    string imagePath,
+    CancellationToken cancellationToken)
+        {
+            return await _productRepository.UpdateImagePathAsync(
+                id,
+                imagePath,
+                cancellationToken);
         }
     }
 }

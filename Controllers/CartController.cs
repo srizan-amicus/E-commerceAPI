@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Asp.Versioning;
 using EcommerceAPI.DTO;
 using EcommerceAPI.DTOs;
 using EcommerceAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceAPI.Controllers
 {
     [ApiController]
-    [Route("api/cart")]
-    [Authorize]
+    [Route("api/v{version:apiVersion}/cart")]
+    [ApiVersion("1.0")]
+    [Authorize(Roles = "Customer")]
     public class CartController : ControllerBase
     {
         private readonly ICartService _cartService;
@@ -21,6 +23,7 @@ namespace EcommerceAPI.Controllers
 
         // GET: api/cart
         [HttpGet]
+
         public async Task<ActionResult<List<CartItemDto>>> GetCart(CancellationToken cancellationToken)
         {
             var customerId = GetCustomerId();
@@ -48,7 +51,7 @@ namespace EcommerceAPI.Controllers
             });
         }
 
-        // PUT: api/cart/items/1
+        // PUT: api/cart/items
         [HttpPut("items/{productId}")]
         public async Task<IActionResult> UpdateItem(
             int productId,
@@ -69,7 +72,7 @@ namespace EcommerceAPI.Controllers
             return NoContent();
         }
 
-        // DELETE: api/cart/items/1
+        // DELETE: api/cart/items
         [HttpDelete("items/{productId}")]
         public async Task<IActionResult> RemoveItem(
             int productId, CancellationToken cancellationToken)

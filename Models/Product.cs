@@ -19,5 +19,7 @@ namespace EcommerceAPI.Models
 
         [Range(0, 5)]
         public decimal Rating { get; set; }
+
+        public string? ImagePath { get; set; }  
     }
 }

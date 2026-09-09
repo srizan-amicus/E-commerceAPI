@@ -1,4 +1,5 @@
-﻿using EcommerceAPI.Models;
+﻿using System.Data;
+using EcommerceAPI.Models;
 using EcommerceAPI.Repositories.Interfaces;
 using Microsoft.Data.SqlClient;
 
@@ -69,18 +70,18 @@ namespace EcommerceAPI.Repositories.Implementations
             return null;
         }
 
-        public async Task<List<ProductDetails>> SearchAsync(
-            string? search,
-            int? categoryId,
-            int? brandId,
-            decimal? minPrice,
-            decimal? maxPrice,
-            decimal? minRating,
-            string? sortBy,
-            string? sortOrder,
-            int page,
-            int pageSize,
-            CancellationToken cancellationToken)
+        public async Task<ProductPagedResult> SearchAsync(
+     string? search,
+     int? categoryId,
+     int? brandId,
+     decimal? minPrice,
+     decimal? maxPrice,
+     decimal? minRating,
+     string? sortBy,
+     string? sortOrder,
+     int page,
+     int pageSize,
+     CancellationToken cancellationToken)
         {
             var products = new List<ProductDetails>();
 
@@ -90,7 +91,8 @@ namespace EcommerceAPI.Repositories.Implementations
             await using var command =
                 new SqlCommand("Srizan_SearchProducts", connection);
 
-            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.CommandType =
+                CommandType.StoredProcedure;
 
             command.Parameters.AddWithValue(
                 "@Search",
@@ -137,14 +139,34 @@ namespace EcommerceAPI.Repositories.Implementations
             await using var reader =
                 await command.ExecuteReaderAsync(cancellationToken);
 
+            var totalRecords = 0;
+
             while (await reader.ReadAsync(cancellationToken))
             {
+                if (totalRecords == 0)
+                {
+                    totalRecords = reader.GetInt32(
+                        reader.GetOrdinal("TotalRecords"));
+                }
+
                 products.Add(MapProduct(reader));
             }
 
-            return products;
-        }
+            var totalPages =
+                pageSize > 0
+                    ? (int)Math.Ceiling(
+                        (double)totalRecords / pageSize)
+                    : 0;
 
+            return new ProductPagedResult
+            {
+                Products = products,
+                Page = page,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = totalPages
+            };
+        }
 
         public async Task<int> CreateAsync(Product product, CancellationToken cancellationToken)
         {
@@ -271,8 +293,35 @@ namespace EcommerceAPI.Repositories.Implementations
                     reader.GetOrdinal("Price")),
 
                 Rating = reader.GetDecimal(
-                    reader.GetOrdinal("Rating"))
+                    reader.GetOrdinal("Rating")),
+
+                ImagePath = reader.IsDBNull(
+                    reader.GetOrdinal("ImagePath"))
+                    ? null
+                    : reader.GetString(
+                        reader.GetOrdinal("ImagePath"))
             };
+        }
+        public async Task<bool> UpdateImagePathAsync(
+    int id,
+    string imagePath,
+    CancellationToken cancellationToken)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand(
+                "Srizan_UpdateProductImage",
+                connection);
+
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.AddWithValue("@ProductId", id);
+            command.Parameters.AddWithValue("@ImagePath", imagePath);
+
+            await connection.OpenAsync(cancellationToken);
+
+            var rows = await command.ExecuteNonQueryAsync(cancellationToken);
+
+            return rows > 0;
         }
     }
 }

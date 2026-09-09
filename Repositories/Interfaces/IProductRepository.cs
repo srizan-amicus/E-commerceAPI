@@ -1,4 +1,5 @@
-﻿using EcommerceAPI.Models;
+﻿using EcommerceAPI.DTOs;
+using EcommerceAPI.Models;
 
 namespace EcommerceAPI.Repositories.Interfaces
 {
@@ -8,7 +9,7 @@ namespace EcommerceAPI.Repositories.Interfaces
 
         Task<ProductDetails?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-        Task<List<ProductDetails>> SearchAsync(
+        Task<ProductPagedResult> SearchAsync(
             string? search,
             int? categoryId,
             int? brandId,
@@ -26,5 +27,11 @@ namespace EcommerceAPI.Repositories.Interfaces
         Task<bool> UpdateAsync(int id, Product product, CancellationToken cancellationToken);
 
         Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
+
+        Task<bool> UpdateImagePathAsync(
+    int id,
+    string imagePath,
+    CancellationToken cancellationToken);
+
     }
 }
