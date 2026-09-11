@@ -1,7 +1,11 @@
 ﻿using AutoMapper;
 using EcommerceAPI.DTO;
 using EcommerceAPI.DTOs;
+using EcommerceAPI.DTOs.Address;
+using EcommerceAPI.DTOs.Order;
 using EcommerceAPI.Models;
+using EcommerceAPI.Models.Address;
+using EcommerceAPI.Models.Order;
 
 namespace EcommerceAPI.Mapping
 {
@@ -33,6 +37,14 @@ namespace EcommerceAPI.Mapping
 
             //cart
             CreateMap<CartItem, CartItemDto>();
+
+            //address
+            CreateMap<Address, AddressDto>();
+            CreateMap<AddressDto, Address>();
+
+            //OrderTracking
+            CreateMap<OrderTracking, OrderTrackingDto>();
+            CreateMap<OrderTrackingDto, OrderTracking>();
         }
     }
 }

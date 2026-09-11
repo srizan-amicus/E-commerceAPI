@@ -1,5 +1,7 @@
 ﻿using System.Data;
+using EcommerceAPI.DTOs.Inventory;
 using EcommerceAPI.Models;
+using EcommerceAPI.Models.Inventory;
 using EcommerceAPI.Repositories.Interfaces;
 using Microsoft.Data.SqlClient;
 
@@ -302,6 +304,146 @@ namespace EcommerceAPI.Repositories.Implementations
                         reader.GetOrdinal("ImagePath"))
             };
         }
+
+        public async Task<Inventory?> UpdateStockAsync(
+    int productId,
+    int quantity,
+    CancellationToken cancellationToken)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            using var command = new SqlCommand(
+                "Srizan_UpdateProductStock",
+                connection);
+
+            command.CommandType =
+                CommandType.StoredProcedure;
+
+            command.Parameters.AddWithValue(
+                "@ProductId",
+                productId);
+
+            command.Parameters.AddWithValue(
+                "@Quantity",
+                quantity);
+
+            await connection.OpenAsync(
+                cancellationToken);
+
+            using var reader =
+                await command.ExecuteReaderAsync(
+                    cancellationToken);
+
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            return new Inventory
+            {
+                InventoryId =
+                    reader.GetInt32(
+                        reader.GetOrdinal("InventoryId")),
+
+                ProductId =
+                    reader.GetInt32(
+                        reader.GetOrdinal("ProductId")),
+
+                Quantity =
+                    reader.GetInt32(
+                        reader.GetOrdinal("Quantity")),
+
+                UpdatedAt =
+                    reader.GetDateTime(
+                        reader.GetOrdinal("UpdatedAt"))
+            };
+        }
+
+        public async Task<List<Inventory>> BulkUpdateStockAsync(
+    List<BulkInventoryUpdateDto> items,
+    CancellationToken cancellationToken)
+        {
+            using var connection =
+                new SqlConnection(_connectionString);
+
+            using var command =
+                new SqlCommand(
+                    "Srizan_BulkUpdateInventory",
+                    connection);
+
+            command.CommandType =
+                CommandType.StoredProcedure;
+
+            var table =
+                new DataTable();
+
+            table.Columns.Add(
+                "ProductId",
+                typeof(int));
+
+            table.Columns.Add(
+                "Quantity",
+                typeof(int));
+
+            foreach (var item in items)
+            {
+                table.Rows.Add(
+                    item.ProductId,
+                    item.Quantity);
+            }
+
+            var parameter =
+                command.Parameters.AddWithValue(
+                    "@InventoryItems",
+                    table);
+
+            parameter.SqlDbType =
+                SqlDbType.Structured;
+
+            parameter.TypeName =
+                "Srizan_BulkInventoryType";
+
+            await connection.OpenAsync(
+                cancellationToken);
+
+            using var reader =
+                await command.ExecuteReaderAsync(
+                    cancellationToken);
+
+            var inventoryList =
+                new List<Inventory>();
+
+            while (await reader.ReadAsync(
+                cancellationToken))
+            {
+                inventoryList.Add(
+                    new Inventory
+                    {
+                        InventoryId =
+                            reader.GetInt32(
+                                reader.GetOrdinal(
+                                    "InventoryId")),
+
+                        ProductId =
+                            reader.GetInt32(
+                                reader.GetOrdinal(
+                                    "ProductId")),
+
+                        Quantity =
+                            reader.GetInt32(
+                                reader.GetOrdinal(
+                                    "Quantity")),
+
+                        UpdatedAt =
+                            reader.GetDateTime(
+                                reader.GetOrdinal(
+                                    "UpdatedAt"))
+                    });
+            }
+
+            return inventoryList;
+        }
+
         public async Task<bool> UpdateImagePathAsync(
     int id,
     string imagePath,

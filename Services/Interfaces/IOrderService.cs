@@ -47,5 +47,10 @@ namespace EcommerceAPI.Services.Interfaces
             int customerId,
             int orderId,
             CancellationToken cancellationToken);
+
+        Task<List<OrderTrackingDto>> GetOrderTrackingAsync(
+        int orderId,
+        int customerId,
+        CancellationToken cancellationToken);
     }
 }

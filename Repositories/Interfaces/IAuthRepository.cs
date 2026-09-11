@@ -6,6 +6,8 @@ namespace EcommerceAPI.Repositories.Interfaces
     {
         Task<Customer?> GetByEmailAsync(string email);
 
+        Task<Customer?> GetByIdAsync(int customerId);
+
         Task<int> CreateCustomerAsync(Customer customer);
     }
 }

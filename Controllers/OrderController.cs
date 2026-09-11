@@ -10,7 +10,7 @@ namespace EcommerceAPI.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/orders")]
     [ApiVersion("1.0")]
-    [Authorize(Roles = "Customer")]
+    [Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -94,6 +94,25 @@ namespace EcommerceAPI.Controllers
             {
                 Message = "Order items added to cart successfully."
             });
+        }
+
+        [HttpGet("{orderId}/tracking")]
+        public async Task<IActionResult> GetTracking(
+    int orderId,
+    CancellationToken cancellationToken)
+        {
+            var customerId =
+                int.Parse(
+                    User.FindFirstValue(
+                        ClaimTypes.NameIdentifier)!);
+
+            var tracking =
+                await _orderService.GetOrderTrackingAsync(
+                    orderId,
+                    customerId,
+                    cancellationToken);
+
+            return Ok(tracking);
         }
 
         [HttpGet("history")]

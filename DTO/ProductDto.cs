@@ -1,4 +1,6 @@
-﻿namespace EcommerceAPI.DTOs
+﻿using System.Text.Json.Serialization;
+
+namespace EcommerceAPI.DTOs
 {
     public class ProductDto
     {
@@ -20,6 +22,7 @@
 
         public decimal Rating { get; set; }
 
-        public string ImagePath { get; set; } 
+        [JsonIgnore]
+        public string? ImagePath { get; set; }
     }
 }

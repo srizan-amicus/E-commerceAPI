@@ -30,9 +30,14 @@ namespace EcommerceAPI.Controllers
                 User.FindFirstValue(
                     ClaimTypes.NameIdentifier)!);
 
+            var customerName = User.FindFirstValue(
+                ClaimTypes.Name)!;
+
+
             var result =
                 await _checkoutService.CalculateCheckoutAsync(
                     customerId,
+                    customerName,
                     request,
                     cancellationToken);
 

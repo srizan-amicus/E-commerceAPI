@@ -6,6 +6,7 @@ namespace EcommerceAPI.Services.Interfaces
     {
         Task<CheckoutResponseDto> CalculateCheckoutAsync(
             int customerId,
+            string CustomerName,
             CheckoutRequestDto request,
             CancellationToken cancellationToken);
     }

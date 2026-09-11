@@ -38,11 +38,19 @@ namespace EcommerceAPI.Repositories.Interfaces
             string orderStatus,
             int updatedBy,
             CancellationToken cancellationToken);
+        Task<int> AddOrderTrackingAsync(
+             OrderTracking tracking,
+            CancellationToken cancellationToken);
+
+        Task<List<OrderTracking>> GetOrderTrackingAsync(
+            int orderId,
+            CancellationToken cancellationToken);
+
         Task<(List<Order> Orders, int TotalRecords)> GetOrderHistoryAsync(
-    int customerId,
-    string? status,
-    int page,
-    int pageSize,
-    CancellationToken cancellationToken);
+        int customerId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
     }
 }

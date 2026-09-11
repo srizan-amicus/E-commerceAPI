@@ -524,6 +524,88 @@ namespace EcommerceAPI.Repositories.Implementations
             await command.ExecuteNonQueryAsync(
                 cancellationToken);
         }
+
+        public async Task<int> AddOrderTrackingAsync(
+    OrderTracking tracking,
+    CancellationToken cancellationToken)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            using var command = new SqlCommand(
+                "Srizan_AddOrderTracking",
+                connection);
+
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.AddWithValue("@OrderId", tracking.OrderId);
+            command.Parameters.AddWithValue("@Status", tracking.Status);
+            command.Parameters.AddWithValue(
+                "@TrackingNote",
+                (object?)tracking.TrackingNote ?? DBNull.Value);
+            command.Parameters.AddWithValue(
+                "@CreatedBy",
+                (object?)tracking.CreatedBy ?? DBNull.Value);
+
+            await connection.OpenAsync(cancellationToken);
+
+            return Convert.ToInt32(
+                await command.ExecuteScalarAsync(cancellationToken));
+        }
+
+        public async Task<List<OrderTracking>> GetOrderTrackingAsync(
+    int orderId,
+    CancellationToken cancellationToken)
+        {
+            var trackingList = new List<OrderTracking>();
+
+            using var connection = new SqlConnection(_connectionString);
+
+            using var command = new SqlCommand(
+                "Srizan_GetOrderTracking",
+                connection);
+
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.AddWithValue("@OrderId", orderId);
+
+            await connection.OpenAsync(cancellationToken);
+
+            using var reader =
+                await command.ExecuteReaderAsync(cancellationToken);
+
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                trackingList.Add(new OrderTracking
+                {
+                    TrackingId = reader.GetInt32(
+                        reader.GetOrdinal("TrackingId")),
+
+                    OrderId = reader.GetInt32(
+                        reader.GetOrdinal("OrderId")),
+
+                    Status = reader.GetString(
+                        reader.GetOrdinal("Status")),
+
+                    TrackingNote = reader.IsDBNull(
+                        reader.GetOrdinal("TrackingNote"))
+                        ? null
+                        : reader.GetString(
+                            reader.GetOrdinal("TrackingNote")),
+
+                    CreatedAt = reader.GetDateTime(
+                        reader.GetOrdinal("CreatedAt")),
+
+                    CreatedBy = reader.IsDBNull(
+                        reader.GetOrdinal("CreatedBy"))
+                        ? null
+                        : reader.GetInt32(
+                            reader.GetOrdinal("CreatedBy"))
+                });
+            }
+
+            return trackingList;
+        }
+
         public async Task<(List<Order> Orders, int TotalRecords)> GetOrderHistoryAsync(
     int customerId,
     string? status,

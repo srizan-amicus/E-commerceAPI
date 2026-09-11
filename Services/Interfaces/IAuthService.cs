@@ -7,5 +7,10 @@ namespace EcommerceAPI.Services.Interfaces
         Task<int> RegisterAsync(RegisterDto dto);
 
         Task<LoginResponseDto?> LoginAsync(LoginDto dto);
+
+        Task<LoginResponseDto?> RefreshTokenAsync(string refreshToken);
+
+        Task LogoutAsync(string refreshToken);
+
     }
 }

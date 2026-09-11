@@ -2,6 +2,7 @@
 using EcommerceAPI.DTOs.Checkout;
 using EcommerceAPI.Repositories.Interfaces;
 using EcommerceAPI.Services.Interfaces;
+using System.Security.Claims;
 
 namespace EcommerceAPI.Services.Implementations
 {
@@ -11,34 +12,64 @@ namespace EcommerceAPI.Services.Implementations
         private readonly IProductPriceService _productPriceService;
         private readonly IProductAvailabilityService _productAvailabilityService;
         private readonly IOrderService _orderService;
+        private readonly IAddressService _addressService;
 
         public CheckoutService(
             ICheckoutRepository checkoutRepository,
             IProductPriceService productPriceService,
             IProductAvailabilityService productAvailabilityService,
-            IOrderService orderService)
+            IOrderService orderService,
+            IAddressService addressService)
         {
             _checkoutRepository = checkoutRepository;
             _productPriceService = productPriceService;
             _productAvailabilityService = productAvailabilityService;
             _orderService = orderService;
+            _addressService = addressService;
         }
 
         public async Task<CheckoutResponseDto> CalculateCheckoutAsync(
             int customerId,
+            string customerName,
             CheckoutRequestDto request,
             CancellationToken cancellationToken)
         {
-            // Get cart
+
+            // 1. Get Cart
+
             var cartItems =
                 await _checkoutRepository.GetCartItemsAsync(
                     customerId,
                     cancellationToken);
 
+            if (!cartItems.Any())
+            {
+                throw new InvalidOperationException(
+                    "Cart is empty.");
+            }
+
+
+  
+            // 2. Get Selected Address
+            var addresses =
+                await _addressService.GetAllAsync(
+                    customerId,
+                    cancellationToken);
+
+            var address = addresses.FirstOrDefault(
+                a => a.AddressId == request.AddressId);
+
+            if (address == null)
+            {
+                throw new InvalidOperationException(
+                    "Selected address was not found.");
+            }
+
+            // 3. Check Stock
+
             var priceChanges = new List<PriceChangeDto>();
             var stockIssues = new List<StockIssueDto>();
 
-            // Check stock
             var inventoryItems = cartItems
                 .Select(item => new InventoryCheckItemDto
                 {
@@ -69,7 +100,8 @@ namespace EcommerceAPI.Services.Implementations
                 }
             }
 
-            // Check price changes
+            // 4. Check Price Changes
+      
             foreach (var item in cartItems)
             {
                 var currentPrice =
@@ -90,7 +122,9 @@ namespace EcommerceAPI.Services.Implementations
                 }
             }
 
-            // Stop checkout if stock or price has an issue
+
+            // 5. Stop if Stock / Price Problems
+      
             if (priceChanges.Any() || stockIssues.Any())
             {
                 return new CheckoutResponseDto
@@ -100,18 +134,19 @@ namespace EcommerceAPI.Services.Implementations
                 };
             }
 
-            // Calculate totals
+            // 6. Calculate Totals
+         
             var subtotal = cartItems.Sum(
                 item => item.ItemSubtotal);
 
-            decimal shippingCharge = request.ShippingMethod
-                .ToLower() switch
-            {
-                "standard" => 100,
-                "express" => 250,
-                "same day" => 400,
-                _ => 0
-            };
+            decimal shippingCharge =
+                request.ShippingMethod.ToLower() switch
+                {
+                    "standard" => 100,
+                    "express" => 250,
+                    "same day" => 400,
+                    _ => 0
+                };
 
             var tax = subtotal * 0.18m;
 
@@ -120,19 +155,25 @@ namespace EcommerceAPI.Services.Implementations
                 shippingCharge +
                 tax;
 
-            // Create Order
-            var order = new EcommerceAPI.Models.Order.Order
-            {
-                CustomerId = customerId,
-                Subtotal = subtotal,
-                ShippingCharge = shippingCharge,
-                Tax = tax,
-                TotalAmount = totalAmount,
-                OrderStatus = "Pending",
-                CreatedBy = customerId
-            };
 
-            // Create Order Items
+       
+            // 7. Create Order
+       
+            var order =
+                new EcommerceAPI.Models.Order.Order
+                {
+                    CustomerId = customerId,
+                    Subtotal = subtotal,
+                    ShippingCharge = shippingCharge,
+                    Tax = tax,
+                    TotalAmount = totalAmount,
+                    OrderStatus = "Pending",
+                    CreatedBy = customerId
+                };
+
+
+            // 8. Create Order Items
+  
             var orderItems = cartItems
                 .Select(item =>
                     new EcommerceAPI.Models.Order.OrderItem
@@ -146,21 +187,38 @@ namespace EcommerceAPI.Services.Implementations
                     })
                 .ToList();
 
-            // Create Shipping
+
+        
+            // 9. Create Shipping Snapshot
+
             var shipping =
                 new EcommerceAPI.Models.Order.OrderShipping
                 {
-                    ShippingName = request.ShippingName,
-                    ShippingAddress = request.ShippingAddress,
-                    ShippingCity = request.ShippingCity,
-                    ShippingState = request.ShippingState,
-                    ShippingPostalCode = request.ShippingPostalCode,
+                    ShippingName = customerName,
+
+                    ShippingAddress =
+                        string.IsNullOrWhiteSpace(
+                            address.AddressLine2)
+                        ? address.AddressLine1
+                        : $"{address.AddressLine1}, {address.AddressLine2}",
+
+                    ShippingCity = address.City,
+
+                    ShippingState = address.State,
+
+                    ShippingPostalCode = address.PostalCode,
+
                     ShippingMethod = request.ShippingMethod,
+
                     ShippingCharge = shippingCharge,
+
                     CreatedBy = customerId
                 };
 
-            // Create complete order
+
+
+            // 10. Create Complete Order
+
             var orderId =
                 await _orderService.CreateCompleteOrderAsync(
                     order,
@@ -168,6 +226,10 @@ namespace EcommerceAPI.Services.Implementations
                     shipping,
                     cancellationToken);
 
+
+        
+            // 11. Return Checkout Response
+       
             return new CheckoutResponseDto
             {
                 OrderId = orderId,

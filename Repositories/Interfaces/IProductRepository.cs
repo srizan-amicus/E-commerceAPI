@@ -1,5 +1,7 @@
 ﻿using EcommerceAPI.DTOs;
+using EcommerceAPI.DTOs.Inventory;
 using EcommerceAPI.Models;
+using EcommerceAPI.Models.Inventory;
 
 namespace EcommerceAPI.Repositories.Interfaces
 {
@@ -29,9 +31,18 @@ namespace EcommerceAPI.Repositories.Interfaces
         Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
 
         Task<bool> UpdateImagePathAsync(
-    int id,
-    string imagePath,
-    CancellationToken cancellationToken);
+        int id,
+        string imagePath,
+        CancellationToken cancellationToken);
+
+        Task<Inventory?> UpdateStockAsync(
+        int productId,
+        int quantity,
+        CancellationToken cancellationToken);
+
+        Task<List<Inventory>> BulkUpdateStockAsync(
+        List<BulkInventoryUpdateDto> items,
+        CancellationToken cancellationToken);
 
     }
 }
