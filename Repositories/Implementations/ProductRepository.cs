@@ -74,8 +74,8 @@ namespace EcommerceAPI.Repositories.Implementations
 
         public async Task<ProductPagedResult> SearchAsync(
      string? search,
-     int? categoryId,
-     int? brandId,
+     List<int>? categoryIds,
+     List<int>? brandIds,
      decimal? minPrice,
      decimal? maxPrice,
      decimal? minRating,
@@ -101,12 +101,16 @@ namespace EcommerceAPI.Repositories.Implementations
                 (object?)search ?? DBNull.Value);
 
             command.Parameters.AddWithValue(
-                "@CategoryId",
-                (object?)categoryId ?? DBNull.Value);
+    "@Categories",
+    categoryIds == null || categoryIds.Count == 0
+        ? DBNull.Value
+        : string.Join(",", categoryIds));
 
             command.Parameters.AddWithValue(
-                "@BrandId",
-                (object?)brandId ?? DBNull.Value);
+     "@Brands",
+     brandIds == null || brandIds.Count == 0
+         ? DBNull.Value
+         : string.Join(",", brandIds));
 
             command.Parameters.AddWithValue(
                 "@MinPrice",
@@ -296,6 +300,9 @@ namespace EcommerceAPI.Repositories.Implementations
 
                 Rating = reader.GetDecimal(
                     reader.GetOrdinal("Rating")),
+
+                CreatedAt = reader.GetDateTime(
+                    reader.GetOrdinal("CreatedAt")),
 
                 ImagePath = reader.IsDBNull(
                     reader.GetOrdinal("ImagePath"))

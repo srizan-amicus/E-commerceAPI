@@ -21,8 +21,9 @@ namespace EcommerceAPI.DTOs
         public decimal Price { get; set; }
 
         public decimal Rating { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-        [JsonIgnore]
+        //[JsonIgnore]
         public string? ImagePath { get; set; }
     }
 }

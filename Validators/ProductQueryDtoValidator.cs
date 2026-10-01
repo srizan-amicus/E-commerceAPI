@@ -12,15 +12,13 @@ namespace EcommerceAPI.Validators
                 .WithMessage("Search cannot exceed 100 characters.")
                 .When(x => !string.IsNullOrWhiteSpace(x.Search));
 
-            RuleFor(x => x.CategoryId)
+            RuleForEach(x => x.CategoryIds)
                 .GreaterThan(0)
-                .When(x => x.CategoryId.HasValue)
-                .WithMessage("CategoryId must be greater than 0.");
+                .WithMessage("Each CategoryId must be greater than 0.");
 
-            RuleFor(x => x.BrandId)
+            RuleForEach(x => x.BrandIds)
                 .GreaterThan(0)
-                .When(x => x.BrandId.HasValue)
-                .WithMessage("BrandId must be greater than 0.");
+                .WithMessage("Each BrandId must be greater than 0.");
 
             RuleFor(x => x.MinPrice)
                 .GreaterThanOrEqualTo(0)

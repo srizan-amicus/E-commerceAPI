@@ -13,8 +13,8 @@ namespace EcommerceAPI.Repositories.Interfaces
 
         Task<ProductPagedResult> SearchAsync(
             string? search,
-            int? categoryId,
-            int? brandId,
+            List<int>? categoryIds,
+            List<int>? brandIds,
             decimal? minPrice,
             decimal? maxPrice,
             decimal? minRating,

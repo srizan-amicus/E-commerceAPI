@@ -69,8 +69,8 @@ namespace EcommerceAPI.Services.Implementations
         {
             var result = await _productRepository.SearchAsync(
                 query.Search,
-                query.CategoryId,
-                query.BrandId,
+                query.CategoryIds,
+                query.BrandIds,
                 query.MinPrice,
                 query.MaxPrice,
                 query.MinRating,

@@ -4,9 +4,9 @@
     {
         public string? Search { get; set; }
 
-        public int? CategoryId { get; set; }
+        public List<int>? CategoryIds { get; set; }
 
-        public int? BrandId { get; set; }
+        public List<int>? BrandIds { get; set; }
 
         public decimal? MinPrice { get; set; }
 
